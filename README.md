@@ -1,32 +1,32 @@
-# 🧠 RagBrain — RAG-as-a-Service Airflow POC
+# RagBrain — RAG-as-a-Service Airflow POC
 
 > **RAG-as-a-Service** pipeline powered by **Apache Airflow 3.0**, **MinIO**, **Qdrant**, and **OpenAI** embeddings. Automatically ingests documents (PDF, DOCX, TXT, URL), chunks them, generates vector embeddings, and upserts them into a vector store — all orchestrated as event-driven, data-aware DAGs.
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Architecture](#-architecture)
+- [Overview](#overview)
+- [Architecture](#architecture)
   - [High-Level System Architecture](#high-level-system-architecture)
   - [DAG Pipeline Flow](#dag-pipeline-flow)
   - [Document Ingestion DAG](#document-ingestion-dag-ingest_documents)
   - [Chunk & Enrich DAG](#chunk--enrich-dag-chunk_and_enrich)
   - [Infrastructure Setup DAG](#infrastructure-setup-dag-setup_infrastructure)
   - [Data Flow Diagram](#data-flow-diagram)
-- [Services](#-services)
-- [Project Structure](#-project-structure)
-- [DAGs](#-dags)
-- [Custom Hooks](#-custom-hooks)
-- [Configuration](#-configuration)
-- [Getting Started](#-getting-started)
-- [Environment Variables](#-environment-variables)
-- [Current Progress](#-current-progress)
-- [Tech Stack](#-tech-stack)
+- [Services](#services)
+- [Project Structure](#project-structure)
+- [DAGs](#dags)
+- [Custom Hooks](#custom-hooks)
+- [Configuration](#configuration)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Current Progress](#current-progress)
+- [Tech Stack](#tech-stack)
 
 ---
 
-## 🔍 Overview
+## Overview
 
 **RagBrain** is a proof-of-concept implementation of a fully automated **Retrieval-Augmented Generation (RAG)** ingestion pipeline. It leverages Apache Airflow 3.0's **Asset-driven scheduling** (data-aware DAGs) to create a reactive, event-driven document processing system.
 
@@ -40,7 +40,7 @@
 
 ---
 
-## 🏛 Architecture
+## Architecture
 
 ### High-Level System Architecture
 
@@ -78,35 +78,35 @@
 ```mermaid
 graph TB
     subgraph External["External Inputs"]
-        PDF["📄 PDF Files"]
-        DOCX["📝 DOCX Files"]
-        TXT["📃 TXT Files"]
-        URL["🌐 URL Lists"]
+        PDF["PDF Files"]
+        DOCX["DOCX Files"]
+        TXT["TXT Files"]
+        URL["URL Lists"]
     end
 
-    subgraph MinIO["🗄️ MinIO Object Storage"]
+    subgraph MinIO["MinIO Object Storage"]
         UB["uploads bucket"]
         RDB["raw-docs bucket"]
         CDB["chunked-docs bucket"]
         MB["manifests bucket"]
     end
 
-    subgraph Airflow["⚙️ Apache Airflow 3.0"]
+    subgraph Airflow["Apache Airflow 3.0"]
         INGEST["ingest_documents DAG"]
         CAE["chunk_and_enrich DAG"]
         INFRA["setup_infrastructure DAG"]
-        ASSET["📦 Asset: s3://raw-docs/ready"]
+        ASSET["Asset: s3://raw-docs/ready"]
     end
 
-    subgraph VectorDB["🔍 Qdrant Vector Store"]
+    subgraph VectorDB["Qdrant Vector Store"]
         COL["rag-brain collection\n(cosine, 1536-dim)"]
     end
 
-    subgraph AI["🤖 OpenAI API"]
+    subgraph AI["OpenAI API"]
         EMB["text-embedding-3-small"]
     end
 
-    PG["🐘 PostgreSQL\n(Airflow metadata DB)"]
+    PG["PostgreSQL\n(Airflow metadata DB)"]
 
     PDF & DOCX & TXT & URL -->|uploaded to| UB
     UB -->|DAG triggered with conf| INGEST
@@ -162,13 +162,13 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A([🚀 DAG Triggered\nwith conf]) --> B[read_trigger_conf]
+    A([DAG Triggered\nwith conf]) --> B[read_trigger_conf]
     B --> C{route_by_type}
     C -->|pdf| D[process_pdf\nPyPDF extraction]
     C -->|docx| E[process_docx\npython-docx extraction]
     C -->|txt| F[process_txt\nUTF-8 decode]
     C -->|url| G[process_url\nurllib fetch]
-    D --> H([✅ done\nEmit Asset Event])
+    D --> H([done\nEmit Asset Event])
     E --> H
     F --> H
     G --> H
@@ -190,7 +190,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    ASSET([📦 Asset Event\ns3://raw-docs/ready]) --> A[pull_raw_doc\nread asset event metadata]
+    ASSET([Asset Event\ns3://raw-docs/ready]) --> A[pull_raw_doc\nread asset event metadata]
     A --> B[chunk_document\nLangChain splitter\nchunk_size=512, overlap=64]
     B --> C{Dynamic Task Mapping\nbatch_size=50}
     C -->|batch_0| D1[tag_metadata\nbatch_0]
@@ -206,7 +206,7 @@ flowchart TD
 **Key Behaviors:**
 - **Asset-scheduled**: automatically runs whenever `ingest_documents` completes successfully
 - Uses **Airflow's dynamic task mapping** (`expand()`) to process all chunk batches in parallel
-- Each batch = up to 50 chunks → embedded in a single OpenAI API call
+- Each batch = up to 50 chunks, embedded in a single OpenAI API call
 - Points stored in Qdrant with full provenance metadata: `source_filename`, `file_hash`, `chunk_index`, `ingested_at`
 - Deterministic **UUID5** point IDs (based on `file_hash + chunk_index`) enable idempotent upserts
 
@@ -216,7 +216,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A([▶ Runs @once]) --> B[setup\ntask]
+    A([Runs @once]) --> B[setup\ntask]
     B --> C{Check & Create\nMinIO Buckets}
     B --> D{Check & Create\nQdrant Collection}
     C --> C1[uploads]
@@ -247,7 +247,7 @@ flowchart LR
     subgraph Processing
         PARSE["Parser\n(file-type specific)"]
         SPLIT["LangChain\nRecursiveCharacterTextSplitter\nchunk=512, overlap=64"]
-        EMBED["OpenAI\ntext-embedding-3-small\n→ 1536-dim vector"]
+        EMBED["OpenAI\ntext-embedding-3-small\n1536-dim vector"]
     end
 
     subgraph Qdrant
@@ -259,7 +259,7 @@ flowchart LR
 
 ---
 
-## 🐳 Services
+## Services
 
 The full stack is defined in `docker-compose.yaml` using **Apache Airflow 3.0 with LocalExecutor**:
 
@@ -278,7 +278,7 @@ The full stack is defined in `docker-compose.yaml` using **Apache Airflow 3.0 wi
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 airflow_adv/
@@ -306,7 +306,7 @@ airflow_adv/
 
 ---
 
-## 🔄 DAGs
+## DAGs
 
 ### 1. `setup_infrastructure` — `dags/infra.py`
 
@@ -356,7 +356,7 @@ Uses **dynamic task mapping** to parallelize embedding across all chunk batches.
 
 ---
 
-## 🔌 Custom Hooks
+## Custom Hooks
 
 ### `MinioHook` — `dags/common/minio_hook.py`
 
@@ -389,7 +389,7 @@ Extends `airflow.hooks.base.BaseHook` to wrap the `qdrant-client` SDK.
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 All tuneable parameters live in `dags/common/config.py`:
 
@@ -414,7 +414,7 @@ EMBEDDING_DIMENSION = 1536
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -433,7 +433,7 @@ cp .env.example .env
 
 ### 2. Set Up Environment Variables
 
-See [Environment Variables](#-environment-variables) below.
+See [Environment Variables](#environment-variables) below.
 
 ### 3. Build & Start All Services
 
@@ -456,7 +456,7 @@ This will:
 
 ### 5. Add Airflow Connections
 
-In the Airflow UI → **Admin → Connections**, add:
+In the Airflow UI under **Admin > Connections**, add:
 
 **MinIO Connection:**
 | Field | Value |
@@ -502,7 +502,7 @@ The `chunk_and_enrich` DAG will automatically start once ingestion completes.
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
 Copy `.env.example` to `.env` and populate:
 
@@ -527,33 +527,33 @@ MINIO_CONSOLE_PORT=9001
 
 ---
 
-## ✅ Current Progress
+## Current Progress
 
 | Feature | Status |
 |---|---|
-| Docker Compose full stack | ✅ Complete |
-| Custom Airflow image (uv-based build) | ✅ Complete |
-| `setup_infrastructure` DAG | ✅ Complete |
-| MinIO custom Hook (`MinioHook`) | ✅ Complete |
-| Qdrant custom Hook (`QdrantHook`) | ✅ Complete |
-| `ingest_documents` DAG — PDF parser | ✅ Complete |
-| `ingest_documents` DAG — DOCX parser | ✅ Complete |
-| `ingest_documents` DAG — TXT parser | ✅ Complete |
-| `ingest_documents` DAG — URL fetcher | ✅ Complete |
-| Asset-driven DAG chaining | ✅ Complete |
-| `chunk_and_enrich` DAG — LangChain chunking | ✅ Complete |
-| `chunk_and_enrich` DAG — OpenAI embeddings | ✅ Complete |
-| `chunk_and_enrich` DAG — Qdrant upsert | ✅ Complete |
-| Dynamic task mapping (parallel batch embedding) | ✅ Complete |
-| Idempotent UUID5-based point IDs | ✅ Complete |
-| Retrieval / Query API | 🔲 Not started |
-| Monitoring / alerting hooks | 🔲 Not started |
-| CI/CD pipeline | 🔲 Not started |
-| Kubernetes / production deployment | 🔲 Not started |
+| Docker Compose full stack | Complete |
+| Custom Airflow image (uv-based build) | Complete |
+| `setup_infrastructure` DAG | Complete |
+| MinIO custom Hook (`MinioHook`) | Complete |
+| Qdrant custom Hook (`QdrantHook`) | Complete |
+| `ingest_documents` DAG — PDF parser | Complete |
+| `ingest_documents` DAG — DOCX parser | Complete |
+| `ingest_documents` DAG — TXT parser | Complete |
+| `ingest_documents` DAG — URL fetcher | Complete |
+| Asset-driven DAG chaining | Complete |
+| `chunk_and_enrich` DAG — LangChain chunking | Complete |
+| `chunk_and_enrich` DAG — OpenAI embeddings | Complete |
+| `chunk_and_enrich` DAG — Qdrant upsert | Complete |
+| Dynamic task mapping (parallel batch embedding) | Complete |
+| Idempotent UUID5-based point IDs | Complete |
+| Retrieval / Query API | Not started |
+| Monitoring / alerting hooks | Not started |
+| CI/CD pipeline | Not started |
+| Kubernetes / production deployment | Not started |
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Component | Technology | Version |
 |---|---|---|
@@ -562,18 +562,18 @@ MINIO_CONSOLE_PORT=9001
 | Vector Database | Qdrant | Latest |
 | Metadata Database | PostgreSQL | 13 |
 | Embeddings | OpenAI `text-embedding-3-small` | — |
-| Text Splitting | LangChain `RecursiveCharacterTextSplitter` | ≥0.3.8 |
-| PDF Parsing | PyPDF | ≥6.10.2 |
-| DOCX Parsing | python-docx | ≥1.2.0 |
+| Text Splitting | LangChain `RecursiveCharacterTextSplitter` | >=0.3.8 |
+| PDF Parsing | PyPDF | >=6.10.2 |
+| DOCX Parsing | python-docx | >=1.2.0 |
 | Package Manager | uv | Latest |
-| Python | Python | ≥3.12 |
+| Python | Python | >=3.12 |
 | Container Runtime | Docker + Docker Compose | — |
 
 ---
 
-## 📝 Notes
+## Notes
 
 - **LocalExecutor** is used for simplicity; the Celery/Redis stack is commented out in `docker-compose.yaml` but can be re-enabled for horizontal scaling.
-- The `manifests` bucket is provisioned but not yet used — reserved for future document tracking/deduplication.
+- The `manifests` bucket is provisioned but not yet used — reserved for future document tracking and deduplication.
 - `OPENAI_API_KEY` must be available as an environment variable inside Airflow task containers. The recommended approach is to set it in `.env` so Docker Compose passes it to all services.
-- Point IDs are generated as **UUID5** (namespace=`NAMESPACE_DNS`, name=`file_hash_chunkindex`), ensuring the same document ingested twice produces the same IDs → safe, idempotent upserts in Qdrant.
+- Point IDs are generated as **UUID5** (namespace=`NAMESPACE_DNS`, name=`file_hash_chunkindex`), ensuring the same document ingested twice produces the same IDs, enabling safe, idempotent upserts in Qdrant.
