@@ -1,0 +1,15 @@
+[project]
+name = "airflow-adv"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "apache-airflow==3.0.0",
+    "langchain-text-splitters>=0.3.8",
+    "minio>=7.2.20",
+    "openai>=1.75.0",
+    "pypdf>=6.10.2",
+    "python-docx>=1.2.0",
+    "qdrant-client>=1.13.3",
+]
