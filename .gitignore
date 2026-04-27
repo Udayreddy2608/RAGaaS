@@ -1,6 +1,37 @@
+# Environment
 .env
+.env.*
+!.env.example
+
+# Logs
 logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Project-specific
 ragaas-poc.pdf
-.DS_Store
-.venv
-.DS_Store
