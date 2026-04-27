@@ -577,3 +577,7 @@ MINIO_CONSOLE_PORT=9001
 - The `manifests` bucket is provisioned but not yet used — reserved for future document tracking and deduplication.
 - `OPENAI_API_KEY` must be available as an environment variable inside Airflow task containers. The recommended approach is to set it in `.env` so Docker Compose passes it to all services.
 - Point IDs are generated as **UUID5** (namespace=`NAMESPACE_DNS`, name=`file_hash_chunkindex`), ensuring the same document ingested twice produces the same IDs, enabling safe, idempotent upserts in Qdrant.
+
+---
+
+> 💡 **This project was architected and designed by the author.** All technical decisions — system design, DAG structure, data flow, and infrastructure — were made deliberately. AI was used as a development assistant, not as a replacement for engineering judgment.

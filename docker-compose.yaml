@@ -92,6 +92,24 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./api:/app/api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: always
+    
   postgres:
     image: postgres:13
     environment:
