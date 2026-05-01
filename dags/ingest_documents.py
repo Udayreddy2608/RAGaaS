@@ -25,19 +25,7 @@ default_args = {
     max_active_runs=5,
     tags=['rag-brain','ingestion']
 )
-def ingest_documents():
-
-    # @task
-    # def check_buckets():
-    #     from common.minio_hook import MinioHook
-
-    #     hook = MinioHook()
-    #     for bucket in REQUIRED_BUCKETS:
-    #         if not hook.bucket_exists(bucket):
-    #             hook.create_bucket(bucket)
-    #             print(f"Bucket '{bucket}' created.")
-    #     print("All required buckets are present.")
-    
+def ingest_documents():    
     @task
     def read_trigger_conf(**context):
         conf = context['dag_run'].conf
@@ -205,7 +193,12 @@ def ingest_documents():
     outlets=[raw_docs_ready],
     )
     def done(**context):
+        from airflow.providers.postgres.hooks.postgres import PostgresHook
+
         ti = context["ti"]
+        conf = context['dag_run'].conf
+        force = conf.get("force", False)
+
         file_info = (
             ti.xcom_pull(task_ids="process_pdf")
             or ti.xcom_pull(task_ids="process_docx")
@@ -216,6 +209,28 @@ def ingest_documents():
         if not file_info:
             raise ValueError("No file_info found from any parser task.")
 
+        pg = PostgresHook(postgres_conn_id = "postgres_default")
+        if force:
+            pg.run(
+                "DELETE FROM rag.ingested_files WHERE file_hash = %s",
+                parameters=(file_info["file_hash"],)
+            )
+
+        pg.run(
+            """
+            INSERT INTO rag.ingested_files
+                (file_hash, source_filename, minio_key, dag_run_id)
+            VALUES
+                (%s, %s, %s, %s)
+            ON CONFLICT (file_hash) DO NOTHING
+            """,
+            parameters=(
+                file_info["file_hash"],
+                file_info["source_filename"],
+                file_info["key"],
+                context["dag_run"].run_id,
+            )
+        )
         context["outlet_events"][raw_docs_ready].extra = file_info
         print(f"Emitting asset with extra: {file_info}")
     
